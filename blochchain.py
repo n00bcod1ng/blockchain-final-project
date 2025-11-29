@@ -133,3 +133,6 @@ blockchain = Blockchain()
 # ==========================================
 # 4. FLASK ROUTES (Web Interface)
 # ==========================================
+@app.route("/")
+def index():
+    return render_template("index.html")

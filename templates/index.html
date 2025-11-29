@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor / Pharmacy Portal – Prescription Blockchain</title>
+
+    <!-- Bootstrap & Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+
+    <style>
+        body {
+            background: #f5f7fa;
+        }
+        .card {
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.08);
+        }
+        .header-title {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .summary-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        .summary-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4">
+    <h2 class="header-title mb-1">Doctor / Pharmacy Portal</h2>
+    <p class="text-muted">
+        Welcome. Use this dashboard to issue digital prescriptions. All data is hashed and stored on the private ledger.
+    </p>
+
+    <!-- Summary Cards -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="summary-box">
+                <div>Mined Blocks</div>
+                <div class="summary-value" id="summary-blocks">0</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="summary-box">
+                <div>Total RX Issued</div>
+                <div class="summary-value" id="summary-prescriptions">0</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="summary-box">
+                <div>Pending Validation</div>
+                <div class="summary-value" id="summary-pending">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Issue Prescription Form -->
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+            <i class="fa fa-file-text-o"></i> Issue New Prescription
+        </div>
+        <div class="card-body">
+
+            <form id="prescription_form">
+                <input type="hidden" id="network_key" value="hospital-network-2025">
+
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Prescriber ID (Public Key)</label>
+                        <input list="doctor_list" class="form-control" id="prescriber_public_key"
+                               placeholder="e.g. doctor_emmanuel" required>
+
+                        <datalist id="doctor_list">
+                            <option value="doctor_emmanuel">Dr Emmanuel (Family Physician)</option>
+                            <option value="doctor_graham">Dr Graham (Cardiologist)</option>
+                            <option value="doctor_alex">Dr Alex</option>
+                            <option value="doctor_kim">Dr Kim</option>
+                        </datalist>
+                    </div>
+
+                    <div class="form-group col-md-6">
+                        <label>Pharmacy ID</label>
+                        <input list="pharmacy_list" class="form-control" id="pharmacy_public_key"
+                               placeholder="e.g. pharmacy_01" required>
+
+                        <datalist id="pharmacy_list">
+                            <option value="pharmacy_01">Pharmacy 01 (Downtown)</option>
+                            <option value="pharmacy_downtown">Pharmacy Downtown</option>
+                            <option value="pharmacy_central">Central Pharmacy</option>
+                        </datalist>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Patient ID / SSN Hash</label>
+                        <input class="form-control" id="patient_id" placeholder="anon-patient-001" required>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label>Medication</label>
+                        <input list="med_list" class="form-control" id="drug_name" placeholder="Amoxicillin" required>
+
+                        <datalist id="med_list">
+                            <option value="Amoxicillin">
+                            <option value="Ibuprofen">
+                            <option value="Metformin">
+                            <option value="Insulin">
+                            <option value="Atorvastatin">
+                            <option value="Ciprofloxacin">
+                            <option value="Azithromycin">
+                            <option value="Lisinopril">
+                            <option value="Omeprazole">
+                            <option value="Prednisone">
+                        </datalist>
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>Dosage</label>
+                        <input class="form-control" id="dosage" placeholder="500mg" required>
+                    </div>
+
+                    <div class="form-group col-md-2">
+                        <label>Qty</label>
+                        <input type="number" class="form-control" id="quantity" placeholder="30" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Digital Signature</label>
+                    <div class="input-group">
+                        <input class="form-control" id="signature" placeholder="Click Auto-Sign to generate..." required>
+                        <div class="input-group-append">
+                            <button type="button" id="auto_sign_btn" class="btn btn-outline-secondary">
+                                Auto-Sign (Demo)
+                            </button>
+                        </div>
+                    </div>
+
+                    <small class="form-text text-muted">
+                        * In production, this would use a doctor's smart card or hardware token.
+                    </small>
+                </div>
+
+                <button class="btn btn-primary btn-block mt-3" type="submit">
+                    Submit to Network
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pending Prescriptions -->
+    <div class="card mt-4">
+        <div class="card-header">
+            Pending Transactions (Mempool)
+        </div>
+        <div class="card-body">
+            <table id="unmined_transactions_table" class="table table-bordered"></table>
+
+            <div class="text-center mt-3">
+                <button id="mine_button" class="btn btn-warning btn-lg">
+                    <i class="fa fa-cube"></i> Run Proof-of-Work (Mine Block)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blockchain Table -->
+    <div class="card mt-4 mb-5">
+        <div class="card-header">
+            Prescriptions Stored on Blockchain
+        </div>
+        <div class="card-body">
+
+            <table id="transactions_table" class="table table-bordered"></table>
+
+            <div class="text-center mt-3">
+                <button id="refresh_blockchain" class="btn btn-secondary btn-sm">Refresh</button>
+                <button id="validate_chain" class="btn btn-success btn-sm">Validate Chain</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+
+<script>
+$(function () {
+
+    // AUTO-SIGN DEMO
+    $("#auto_sign_btn").click(function () {
+        let payload = {
+            prescriber_public_key: $("#prescriber_public_key").val(),
+            pharmacy_public_key: $("#pharmacy_public_key").val(),
+            patient_id: $("#patient_id").val(),
+            drug_name: $("#drug_name").val(),
+            dosage: $("#dosage").val(),
+            quantity: $("#quantity").val(),
+            network_key: "hospital-network-2025"
+        };
+
+        $.post("/auto_sign", payload, function (res) {
+            $("#signature").val(res.signature);
+            alert("Signature generated successfully.");
+        }).fail(function (xhr) {
+            alert("Auto-sign failed: " + (xhr.responseJSON?.message || "Unknown error"));
+        });
+    });
+
+    // Submit Prescription
+    $("#prescription_form").submit(function (e) {
+        e.preventDefault();
+
+        let payload = {
+            prescriber_public_key: $("#prescriber_public_key").val(),
+            pharmacy_public_key: $("#pharmacy_public_key").val(),
+            patient_id: $("#patient_id").val(),
+            drug_name: $("#drug_name").val(),
+            dosage: $("#dosage").val(),
+            quantity: $("#quantity").val(),
+            signature: $("#signature").val(),
+            network_key: "hospital-network-2025"
+        };
+
+        $.post("/new_transaction", payload, function (res) {
+            alert(res.message || "Prescription submitted.");
+            location.reload();
+        }).fail(function (xhr) {
+            alert("Error: " + (xhr.responseJSON?.message || "Unknown error"));
+        });
+    });
+
+    // Mining
+    $("#mine_button").click(function () {
+        $.get("/mine", { network_key: "hospital-network-2025" }, function () {
+            alert("Block mined.");
+            location.reload();
+        }).fail(function (xhr) {
+            alert("Mining failed: " + (xhr.responseJSON?.message || "Unknown error"));
+        });
+    });
+
+    // Load Blockchain
+    function loadBlockchain() {
+        $.get("/chain", function (response) {
+
+            let tableData = [];
+            let total = 0;
+
+            $("#summary-blocks").text(response.length);
+
+            response.chain.forEach((block) => {
+                block.transactions.forEach((tx) => {
+                    total++;
+                    tableData.push([
+                        tx.prescriber_public_key,
+                        tx.pharmacy_public_key,
+                        tx.patient_id,
+                        tx.drug_name,
+                        tx.dosage,
+                        tx.quantity,
+                        block.block_number
+                    ]);
+                });
+            });
+
+            $("#summary-prescriptions").text(total);
+
+            if ($.fn.DataTable.isDataTable('#transactions_table')) {
+                $('#transactions_table').DataTable().clear().destroy();
+            }
+
+            $("#transactions_table").DataTable({
+                data: tableData,
+                columns: [
+                    { title: "Prescriber" },
+                    { title: "Pharmacy" },
+                    { title: "Patient" },
+                    { title: "Drug" },
+                    { title: "Dosage" },
+                    { title: "Qty" },
+                    { title: "Block" }
+                ]
+            });
+        });
+    }
+    loadBlockchain();
+    $("#refresh_blockchain").click(loadBlockchain);
+
+    // Load Pending
+    function loadPending() {
+        $.get("/transactions/get", function (response) {
+
+            $("#summary-pending").text(response.transactions.length);
+
+            if ($.fn.DataTable.isDataTable('#unmined_transactions_table')) {
+                $('#unmined_transactions_table').DataTable().clear().destroy();
+            }
+
+            $("#unmined_transactions_table").DataTable({
+                data: response.transactions.map(t => [
+                    t.prescriber_public_key,
+                    t.patient_id,
+                    t.drug_name,
+                    t.quantity
+                ]),
+                columns: [
+                    { title: "Prescriber" },
+                    { title: "Patient" },
+                    { title: "Drug" },
+                    { title: "Qty" }
+                ]
+            });
+        });
+    }
+    loadPending();
+
+    // Validate Blockchain
+    $("#validate_chain").click(function () {
+        $.get("/validate", function (response) {
+            if (response.valid) {
+                alert("Blockchain is VALID ✔️");
+            } else {
+                alert("Blockchain is INVALID ❌ (tampering detected)");
+            }
+        });
+    });
+
+});
+</script>
+</body>
+</html>
